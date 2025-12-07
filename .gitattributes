@@ -1,0 +1,2 @@
+D:/research/3DCS/2024-12-05-mww70-off-coast-of-northern-california-sacdata.zip filter=lfs diff=lfs merge=lfs -text
+D:/research/3DCS/a_event.npy filter=lfs diff=lfs merge=lfs -text
