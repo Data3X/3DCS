@@ -534,7 +534,7 @@ if __name__ == '__main__':
     def CS3D_theo():
         start = time.time()
         H, W, T = 64, 64, 232
-        full_video = normalize(np.load(r'D:\research\3DCS\7eAYNC9lkfhAW1G4.full.npy')[50:450,:,:,0])
+        full_video = normalize(np.load(r'D:\research\3DCS\a_event.npy')[50:450,:,:,0])
         # animate_a_video(full_video)
         video = full_video[32:T+32,32:H+32,32:W+32]
         T_clip = 64
@@ -560,7 +560,7 @@ if __name__ == '__main__':
     def CS3D_real():
         start = time.time()
         H, W, T_clip = 32, 64, 64
-        full_video = normalize(np.load(r'D:\research\3DCS\7eAYNC9lkfhAW1G4.full.npy')[50:306,:,:,0])
+        full_video = normalize(np.load(r'D:\research\3DCS\a_event.npy')[50:306,:,:,0])
         video = full_video[80:80+T_clip,32:32+H,32:32+W]
         channel = 0
         allpoints = np.load(r'data\all_ob_points.npy')[:,:,channel]
@@ -593,4 +593,5 @@ if __name__ == '__main__':
         
     # CS3D_real()
     CS3D_theo()
+
     
