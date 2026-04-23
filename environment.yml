@@ -1,0 +1,11 @@
+name: CS3D
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.9
+  - numpy
+  - pip:
+    - torch==2.1.0
+    - obspy
+    - matplotlib

@@ -4,8 +4,12 @@ Compressing sensing inversion for 3D wavefield
 # 1. Introduction
 
 
-# 2. Environment
+# 2. Environment Setup
+Option 1 (Recommended): Create a full Conda environment:
+conda env create -f environment.yml
 
+Option 2: Lightweight install via Pip:
+pip install -r requirements.txt
 
 # 3. Data Download
 
