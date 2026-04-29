@@ -2,3 +2,4 @@ __pycache__/
 .dist/
 .vscode/
 upload/
+data_download_and_preprocess/

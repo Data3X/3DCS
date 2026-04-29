@@ -587,7 +587,7 @@ if __name__ == '__main__':
     event_for_spectrum_statistics = np.load(event_path)
     
     start = time.time()
-    # CS3D_for_real_data(event_for_spectrum_statistics, allpoints, full_pos, sta_info)
+    CS3D_for_real_data(event_for_spectrum_statistics, allpoints, full_pos, sta_info)
     # CS3D_for_synthetic_data(event_for_spectrum_statistics)
     end = time.time()
     print(f'used_time: {end - start:.1f} s')
