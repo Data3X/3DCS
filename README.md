@@ -34,7 +34,7 @@ Synthetic and real event data can be found at release "v1.0.0 - Seismic Data (Ra
 
 (2) The data files "all_sta_data.npy", "sta_info.txt", "sta_pos_in_grid.npy", "test_sta_info.txt" are ready for a quick start.
 
-(3) After downloading the "3DCS" dictionary, "CS3D_main.py" is the main progress, just run it. Other python scipts are all auxiliary functions.
+(3) After downloading the "3DCS" dictionary, "CS3D_main.py" is the main progress, just run it. Other python scipts are all auxiliary functions. In "CS3D_main.py" main, two functions "CS3D_for_real_data" and "CS3D_for_synthetic_data" show the results of real and synthetic data.
 
 (4) "GMT_plot.sh" is a plot script using bash shell, you may need GMT to run it.
 

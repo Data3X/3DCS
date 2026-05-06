@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from scipy.fftpack import dct,idct
+from scipy.fftpack import dct,idct,dctn
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-def animate_a_video(video: np.ndarray, pos: np.ndarray = None, normalize: bool = True, save: bool = False, color: np.ndarray = None):
+def animate_a_video(video: np.ndarray, pos, normalize: bool = True, save: bool = False, color = None):
     """animate a video, which can be used to visualize the seismic wave propagation process,
     and the positions of the stations can also be visualized if provided.
     
@@ -18,7 +19,7 @@ def animate_a_video(video: np.ndarray, pos: np.ndarray = None, normalize: bool =
     T,H,W = video.shape
     fig, ax = plt.subplots()
     ax.set_ylim(0,H)
-    maxv = np.max(abs(video))
+    maxv = np.max(np.abs(video))
     if normalize:
         video = video / maxv
         im = ax.imshow(video[0,:,:], cmap='seismic', vmin=-1, vmax=1,interpolation='bicubic', origin='lower')
@@ -148,7 +149,7 @@ def present_different_precents_for_recovering(video: np.ndarray):
         recover_threshold = recover_threshold_list_copy[i]
         plt.scatter(percent_list[threshold_point],rmse_list[threshold_point])
         plt.axhline(y=recover_threshold, color='red', linestyle='--', label=f'Threshold ({recover_threshold})')
-        plt.text(percent_list[threshold_point],rmse_list[threshold_point] + 0.5, f'({percent_list[threshold_point]:.3f},{rmse_list[threshold_point]:.3f})',fontsize=12, ha='center', va='bottom')
+        plt.text(float(percent_list[threshold_point]), float(rmse_list[threshold_point]) + 0.5, f'({percent_list[threshold_point]:.3f},{rmse_list[threshold_point]:.3f})',fontsize=12, ha='center', va='bottom')
 
     plt.xlabel('percents (%)')
     plt.ylabel('recoverd percents (%)')

@@ -2,23 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 """ 
-This file contains functions to apply smooth transitions to the input matrix, 
-which can be useful for tapering the data before applying optimization algorithms. 
+This file contains functions to apply smooth transitions to the input traces, 
+which can be useful for tapering the begin of data before applying optimization algorithms. 
 The main function is `smooth_transition`, 
-which takes a matrix and applies a specified transition type (linear, sigmoid, polynomial, or exponential) between two indices.
-The code also includes helper functions for each transition type and a function to plot the comparison between the original and smoothed matrices.
+which takes traces and applies a specified transition type (linear, sigmoid, polynomial, or exponential).
 """
 
-def smooth_transition(matrix, start_idx=50, end_idx=70, transition_type='sigmoid'):
-    T, K = matrix.shape
+def smooth_transition(traces, start_idx=50, end_idx=70, transition_type='sigmoid'):
+    T, K = traces.shape
     
     assert 0 <= start_idx < end_idx < T, "bad index"
     transition_length = end_idx - start_idx + 1
     
-    result = matrix.copy()
+    result = traces.copy()
     
     for k in range(K):
-        original_series = matrix[:, k]
+        original_series = traces[:, k]
         
         result[:start_idx, k] = 0
         

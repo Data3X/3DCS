@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from scipy.interpolate import RegularGridInterpolator
 
 def generate_simple_indices_3d(T: int, H: int, W: int, n: int, nt: int):
@@ -93,9 +94,11 @@ def shuffle(data: np.ndarray, pos: np.ndarray, sta_info: np.ndarray, keep: int):
     return shuffled_data[:, :keep], shuffled_data[:, keep:], shuffled_coords, shuffled_sta_info
 
 
-def smooth_function(video1: np.ndarray, video2: np.ndarray, window_type: str = 'linear'):
+def smooth_function(video1, video2, window_type: str = 'linear'):
     """smooth the transition between two videos using a specified window function.
-
+        Issue: Boundary discontinuities during segment-wise seismic data restoration.
+        Solution: Implemented Overlap-Add (OLA) blending with a linear ramp (cross-fade) to ensure
+        continuity between processed windows.
     Args:
         video1 (np.ndarray): the first video, shape (T, H, W)
         video2 (np.ndarray): the second video, shape (T, H, W)
@@ -105,7 +108,7 @@ def smooth_function(video1: np.ndarray, video2: np.ndarray, window_type: str = '
         ValueError: if the window_type is not supported
         
     Returns:
-        result (np.ndarray): the smoothed video, shape (T, H, W)
+        result: the smoothed video, shape (T, H, W)
     """
     T, H, W = video1.shape
     if window_type == 'linear':
@@ -123,10 +126,9 @@ def smooth_function(video1: np.ndarray, video2: np.ndarray, window_type: str = '
     else:
         raise ValueError("window_type must be 'linear', 'hann', 'hamming', or 'blackman'")
 
-    weights_3d = weights[:, np.newaxis, np.newaxis]
-    reverse_weights_3d = weights[::-1][:, np.newaxis, np.newaxis]
-    
-    result = video1.copy()
+    weights = torch.as_tensor(weights, device=video1.device, dtype=video1.dtype)
+    weights_3d = weights[:, None, None]
+    reverse_weights_3d = weights.flip(0)[:, None, None]
     result = (weights_3d * video1 + reverse_weights_3d * video2)
     
     return result 
@@ -142,12 +144,19 @@ def joint(video_list: list, overlap_len: int, smooth_function=smooth_function):
     Returns:
         np.ndarray: The joined video with shape (T, H, W)
     """
-    video_num = len(video_list)
-    long_video = video_list[0].copy()[:-overlap_len]
-    for i in range(1,video_num-1):
-        long_video = np.concatenate([long_video, smooth_function(video_list[i-1][-overlap_len:], video_list[i][:overlap_len]), video_list[i][overlap_len:-overlap_len]], axis=0)
-    long_video = np.concatenate([long_video, smooth_function(video_list[i][-overlap_len:], video_list[i+1][:overlap_len]), video_list[i+1][overlap_len:]], axis=0)
-    return long_video
+    pieces = []
+    pieces.append(video_list[0][:-overlap_len])
+    
+    for i in range(len(video_list) - 1):
+        smooth_seg = smooth_function(video_list[i][-overlap_len:], video_list[i+1][:overlap_len])
+        pieces.append(smooth_seg)
+
+        if i + 1 == len(video_list) - 1:
+            pieces.append(video_list[i+1][overlap_len:])
+        else:
+            pieces.append(video_list[i+1][overlap_len:-overlap_len])
+    
+    return torch.concatenate(pieces, dim=0).cpu().numpy()
 
 def get_sta_pos(sta_info: np.ndarray, selected_sta_info: np.ndarray, allpoints: np.ndarray, full_pos: np.ndarray):
     """
