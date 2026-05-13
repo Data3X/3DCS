@@ -46,17 +46,17 @@ We divided a 126 km×126 km area into a regular grid of 64×64 points. A triangu
 If you find this work useful for your research, please cite this repository:
 
 **APA Style:**
-> Dewei Ma. (2026). *3DCS: Compressing sensing inversion for 3D wavefield* (Version 1.0.0) [Software]. Available from https://github.com/Data3X/3DCS
+> Dewei Ma. (2026). *Seismic3DCS: Compressing sensing inversion for 3D wavefield* (Version 1.0.0) [Software]. Available from https://github.com/Data3X/Seismic3DCS
 
 **BibTeX:**
 ```bibtex
 @software{3DCS2026,
   author = {Dewei Ma},
-  title = {3DCS: Compressing sensing inversion for 3D wavefield},
+  title = {Seismic3DCS: Compressing sensing inversion for 3D wavefield},
   year = {2026},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{[https://github.com/yourusername/3DCS](https://github.com/yourusername/3DCS)}},
+  howpublished = {\url{[https://github.com/Data3X/Seismic3DCS](https://github.com/Data3X/Seismic3DCS)}},
   version = {1.0.0}
 }
 ```
