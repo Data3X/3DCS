@@ -27,20 +27,21 @@ We divided a 126 km×126 km area into a regular grid of 64×64 points. A triangu
 
 ***Data format***: Station recordings is stored in a $N \times T$ data file of ".npy" format, where N is station numbers, T is time steps, and position of stations is stored in a $N \times 2$ data file of ".npy" format. 
 
-Synthetic and real event data can be found at release "v1.0.0 - Seismic Data (Raw & Synthetic)"
+(3) The Synthetic and real event data can be found at release "v1.0.0 - Seismic Data (Raw & Synthetic)"
+
 ---
-## 5. Quick Start
+## 4. Quick Start
 (1) Before running, ensure the environment is ready.
 
 (2) The data files "all_sta_data.npy", "sta_info.txt", "sta_pos_in_grid.npy", "test_sta_info.txt" are ready for a quick start.
 
-(3) After downloading the "3DCS" dictionary, "CS3D_main.py" is the main progress, just run it. Other python scipts are all auxiliary functions. In "CS3D_main.py" main, two functions "CS3D_for_real_data" and "CS3D_for_synthetic_data" show the results of real and synthetic data.
+(3) After downloading the "3DCS" dictionary, "CS3D_main.py" is the main progress, just run it. Other python scipts are all auxiliary functions. In "CS3D_main.py" main, two functions "CS3D_for_real_data" and "CS3D_for_synthetic_data" show the results of real and synthetic data, and our main algorithm is in function "compute_reduced_dictionary_GPU".
 
 (4) "GMT_plot.sh" is a plot script using bash shell, you may need GMT to run it.
 
 ---
 
-## 6. Citation
+## 5. Citation
 
 If you find this work useful for your research, please cite this repository:
 
@@ -61,7 +62,7 @@ If you find this work useful for your research, please cite this repository:
 ```
 ---
 
-## 7. References
+## 6. References
 
 This project builds upon the following foundational Earth model and wavefield simulation software:
 

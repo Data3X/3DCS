@@ -16,8 +16,8 @@ def plot_3comp_wavefield(
 ):
     """
     Create a single figure with three 3D subplots (E, N, Z) sharing ONE colour bar.
-    Each subplot shows two orthogonal vertical cross‑sections of the wavefield:
-    one at a fixed H index (time‑W plane) and one at a fixed W index (time‑H plane).
+    Each subplot shows two orthogonal vertical cross-sections of the wavefield:
+    one at a fixed H index (time-W plane) and one at a fixed W index (time-H plane).
 
     Parameters
     ----------
@@ -31,16 +31,16 @@ def plot_3comp_wavefield(
     w_axis : 1D array, optional
         Coordinates along the W dimension (length W). If None, sample indices.
     prof_h_idx : int, optional
-        Index of the fixed‑H profile (constant H). Default: H // 2.
+        Index of the fixed-H profile (constant H). Default: H // 2.
     prof_w_idx : int, optional
-        Index of the fixed‑W profile (constant W). Default: W // 2.
+        Index of the fixed-W profile (constant W). Default: W // 2.
     t_slice : int, optional
-        If provided, also plot a horizontal time‑slice (constant T).
+        If provided, also plot a horizontal time-slice (constant T).
     cmap : str
         Plotly colour scale name (e.g. 'RdBu', 'seismic').
     vrange : tuple (vmin, vmax) or None
         Colour scale limits. If None, the limits are set to ±max(|data|)
-        (zero‑symmetric) so that positive/negative amplitudes are comparable
+        (zero-symmetric) so that positive/negative amplitudes are comparable
         across components.
     component_names : tuple of str
         Subplot titles, e.g. ('E', 'N', 'Z').
@@ -91,7 +91,7 @@ def plot_3comp_wavefield(
     for comp_idx, scene_name in enumerate(scene_names):
         field = data[:, :, :, comp_idx]   # shape (T, H, W)
 
-        # ---- Profile 1: fixed H (time‑W plane, y = constant) ----
+        # ---- Profile 1: fixed H (time-W plane, y = constant) ----
         slice_h = field[:, prof_h_idx, :]               # (T, W)
         W_grid, T_grid_h = np.meshgrid(w_axis, time)    # (T, W)
         H_const_h = np.full_like(W_grid, h_axis[prof_h_idx])
@@ -111,7 +111,7 @@ def plot_3comp_wavefield(
             row=1, col=comp_idx + 1
         )
 
-        # ---- Profile 2: fixed W (time‑H plane, x = constant) ----
+        # ---- Profile 2: fixed W (time-H plane, x = constant) ----
         slice_w = field[:, :, prof_w_idx]               # (T, H)
         H_grid, T_grid_w = np.meshgrid(h_axis, time)    # (T, H)
         W_const_w = np.full_like(H_grid, w_axis[prof_w_idx])
@@ -131,7 +131,7 @@ def plot_3comp_wavefield(
             row=1, col=comp_idx + 1
         )
 
-        # ---- Optional horizontal time‑slice ----
+        # ---- Optional horizontal time-slice ----
         if t_slice is not None:
             slice_t = field[t_slice, :, :]
             H_grid_t, W_grid_t = np.meshgrid(h_axis, w_axis, indexing='ij')
@@ -175,9 +175,9 @@ def plot_3comp_wavefield(
     # ---------- scene cosmetics ----------
     for scene_name in scene_names:
         fig.update_layout(**{
-            f'{scene_name}.xaxis.title': 'Y',
-            f'{scene_name}.yaxis.title': 'X',
-            f'{scene_name}.zaxis.title': 'Z',
+            f'{scene_name}.xaxis.title': 'T',
+            f'{scene_name}.yaxis.title': 'H',
+            f'{scene_name}.zaxis.title': 'W',
             # f'{scene_name}.zaxis.autorange': 'reversed',
             f'{scene_name}.aspectmode': 'manual',
             f'{scene_name}.aspectratio.x': 1,
@@ -189,13 +189,20 @@ def plot_3comp_wavefield(
 
 
 if __name__ == '__main__':
-    # replace with your actual file path
-    from CS3D_main import dct_basis_via_idct
-    H, W, T = 64, 64, 64
-    data1 = dct_basis_via_idct(H, W, T, u=0, v=2, w=4, norm='ortho')
-    data = np.stack([data1, data1, data1], axis=-1)  # shape (H, W, T, 3)
-    data = np.transpose(data, (2, 0, 1, 3))
-    # data = np.load('upload/synthetic_event2.npy')[100:228]   # shape (T, H, W, 3)
+    data_source = 'recovery'  # 'basis', 'synthetic' or 'recovery'
+    if data_source == 'basis':
+        from CS3D_main import dct_basis_via_idct
+        H, W, T = 64, 64, 64
+        data1 = dct_basis_via_idct(H, W, T, u=0, v=2, w=4, norm='ortho')
+        data = np.stack([data1, data1, data1], axis=-1)  # shape (H, W, T, 3)
+        data = np.transpose(data, (2, 0, 1, 3))
+    elif data_source == 'synthetic':
+        data = np.load('upload/synthetic_event0.npy')[100:228]   # shape (T, H, W, 3)
+    elif data_source == 'recovery':
+        data = np.load('real_data_results/rec_video.npy')[100:228]   # shape (T, H, W, 3)
+        data = np.stack([data, data, data], axis=-1)
+        data = np.transpose(data, (2, 0, 1, 3))
+    
     T, H, W, C = data.shape
     # If the array is large, downsample to improve rendering speed
     # data = data[::3, ::2, ::2, :]

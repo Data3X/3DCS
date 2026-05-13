@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.fftpack import idct
 from plot_tools import animate_comparaison_for_two_videos, main_spectrum_statistics, animate_a_video
-from tools import gene_mask, shuffle, joint, get_sta_pos, normalize
+from tools import get_1d_idct_matrix, gene_mask, shuffle, joint, get_sta_pos, normalize
 from greedy_methods_GPU import OMP, SAMP
 import taper
 import matplotlib.pyplot as plt
@@ -187,7 +187,8 @@ def compute_reduced_dictionary_GPU(T: int, H: int, W: int, K: int, pos_np: np.nd
         T (int): the number of time steps
         H (int): the height of the spatial grid
         W (int): the width of the spatial grid
-        pos (np.ndarray): the positions of the station locations
+        K (int): the number of observations
+        pos (np.ndarray): the positions of the station locations, shape (K, 2)
         indices_3d (np.ndarray): the indices of the reduced dictionary
         pos_type (str, optional): the type of positions. Defaults to 'float'.
         device (str, optional): the device to use for computation. Defaults to 'cuda'.
@@ -252,10 +253,6 @@ def compute_reduced_dictionary_GPU(T: int, H: int, W: int, K: int, pos_np: np.nd
     B = A / (norms + 1e-8)
     return A, B, coords_3d
 
-def get_1d_idct_matrix(N, device):
-    D = idct(np.eye(N, dtype=np.float32), axis=0, norm='ortho')
-    return torch.tensor(D, dtype=torch.float32, device=device)
-
 def recovery_GPU(ob_np: np.ndarray, H: int, W: int, T: int, pos: np.ndarray, indices_3d: np.ndarray, 
                  A=None, B=None, coords_3d=None, iters: int = 1000, device: str = 'cuda', method: str = 'SAMP'):
     
@@ -313,7 +310,7 @@ def recovery_GPU(ob_np: np.ndarray, H: int, W: int, T: int, pos: np.ndarray, ind
         xk, Gamma_tL, t, L, ctn = SAMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device)
         return recover_to_video(xk, Gamma_tL, t, L)
 
-def CS3D_for_synthetic_data(event_for_spectrum_statistics: np.ndarray, reload: bool = False, plot: bool = False):
+def CS3D_for_synthetic_data(event_for_spectrum_statistics: np.ndarray, sampling_ratio: float = 0.05, method: str = 'OMP', reload: bool = False, plot: bool = False):
     """
     perform the CS3D reconstruction for synthetic data, 
     which can be used to evaluate the performance of the reconstruction algorithm on synthetic data, 
@@ -329,7 +326,7 @@ def CS3D_for_synthetic_data(event_for_spectrum_statistics: np.ndarray, reload: b
     video = full_video[32:T+32,32:H+32,32:W+32]
 
     if not reload:
-        ob, ob_pos, test_pos = gene_mask(video, H, W, 10, sample_ratio=0.04, mask_type='float') # random
+        ob, ob_pos, test_pos = gene_mask(video, H, W, 10, sample_ratio=sampling_ratio, mask_type='float') # random
         np.save(r'synthetic_data_results\ob_for_reloading.npy', ob)
         np.save(r'synthetic_data_results\ob_pos_for_reloading.npy', ob_pos)
         np.save(r'synthetic_data_results\test_pos_for_reloading.npy', test_pos)
@@ -346,7 +343,7 @@ def CS3D_for_synthetic_data(event_for_spectrum_statistics: np.ndarray, reload: b
     for i in range(clip_num):
         print(f"clip {i}")
         start_frame = i*(T_clip - overlap_len)
-        rec_video = recovery_GPU(ob[start_frame:start_frame+T_clip], H, W, T_clip, ob_pos, indices_3d, A=A, B=B, coords_3d=coords_3d, method='SAMP')
+        rec_video = recovery_GPU(ob[start_frame:start_frame+T_clip], H, W, T_clip, ob_pos, indices_3d, A=A, B=B, coords_3d=coords_3d, method=method)
         rec_video_list.append(rec_video)
     rec_video = joint(rec_video_list, overlap_len)
     # rec_video = np.load(r'cs3D_theo_data\rec_video_theo.npy')
@@ -356,7 +353,7 @@ def CS3D_for_synthetic_data(event_for_spectrum_statistics: np.ndarray, reload: b
     show_synthetic_data_results(rec_video, video, test_pos)
 
 def CS3D_for_real_data(event_for_spectrum_statistics: np.ndarray, allpoints: np.ndarray, full_pos: np.ndarray, 
-                       sta_info: np.ndarray, reload: bool = False, plot: bool = False):
+                       sta_info: np.ndarray, sampling_ratio: float = 0.05, method: str = 'OMP', reload: bool = False, plot: bool = False):
     """perform  the CS3D reconstruction for real data, 
     which can be used to evaluate the performance of the reconstruction algorithm on real data, 
     and the reconstructed video will be compared with the observations at the test positions, 
@@ -374,8 +371,9 @@ def CS3D_for_real_data(event_for_spectrum_statistics: np.ndarray, allpoints: np.
     video = full_video[80:80+T_clip,32:32+H,32:32+W]
     allpoints = taper.smooth_transition(allpoints)
 
+    keep = int(sampling_ratio * H * W)
     if not reload:
-        ob, test_sta, full_pos, sta_info = shuffle(allpoints, full_pos, sta_info, keep=50) # random
+        ob, test_sta, full_pos, sta_info = shuffle(allpoints, full_pos, sta_info, keep=keep) # random
     else:
         test_sta_info = np.loadtxt(r"real_data_results\test_sta_info.txt", dtype=str)
         ob, test_sta, full_pos, sta_info = get_sta_pos(sta_info, test_sta_info, allpoints, full_pos)
@@ -390,7 +388,7 @@ def CS3D_for_real_data(event_for_spectrum_statistics: np.ndarray, allpoints: np.
     for i in range(clip_num):
         print(f"clip {i}")
         start_frame = i*(T_clip - overlap_len)
-        rec_video = recovery_GPU(ob[start_frame:start_frame+T_clip], H, W, T_clip, full_pos[:K], indices_3d, A=A, B=B, coords_3d=coords_3d)
+        rec_video = recovery_GPU(ob[start_frame:start_frame+T_clip], H, W, T_clip, full_pos[:K], indices_3d, A=A, B=B, coords_3d=coords_3d, method=method)
         rec_video_list.append(rec_video)
         
     rec_video = joint(rec_video_list, overlap_len)
@@ -412,8 +410,8 @@ if __name__ == '__main__':
     event_for_spectrum_statistics = np.load(event_path)
     
     start = time.time()
-    # CS3D_for_real_data(event_for_spectrum_statistics, allpoints, full_pos, sta_info, reload=False, plot=False)
-    CS3D_for_synthetic_data(event_for_spectrum_statistics,reload=False, plot=False)
+    # CS3D_for_real_data(event_for_spectrum_statistics, allpoints, full_pos, sta_info, sampling_ratio=0.04, method='SAMP', reload=False, plot=False)
+    CS3D_for_synthetic_data(event_for_spectrum_statistics, sampling_ratio=0.04, method='OMP', reload=False, plot=False)
     end = time.time()
     print(f'used_time: {end - start:.1f} s')
 

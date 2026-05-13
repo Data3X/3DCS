@@ -10,9 +10,10 @@ def OMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
     Sk_buffer = torch.zeros((P, iters + 1), dtype=torch.float32, device=device)
     
     ctn = norm(rk)
-    for s in range(iters + 1):
+    for s in range(iters):
         res = B @ rk
         res[~mask] = 0
+
         maxindex = torch.argmax(torch.abs(res))
         Skpos[s] = maxindex
         mask[maxindex] = False
@@ -33,13 +34,14 @@ def OMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
         ctn = torch.norm(rk)
         
         if ctn < err:
-            return xk.squeeze(), Skpos, s, ctn.item()
-        elif s >= sparsity_list[0]:
-            print(f"Sparsity reached: {s}")
+            return xk.squeeze(), Skpos[:s+1], s, ctn.item()
+        if sparsity_list and s >= sparsity_list[0]:
+            print(f"Sparsity checkpoint: {s}, error={ctn.item():.6f}")
             sparsity_list.pop(0)
+
             
-    print("Maximum iterations reached without convergence.")
-    return xk.squeeze(), Skpos, s, ctn.item()
+    print(f"Maximum iterations ({iters}) reached. Final error: {ctn.item():.6f}")
+    return xk.squeeze(), Skpos[:s+1], s, ctn.item()
             
 def SAMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
     P = A.shape[1]
@@ -53,9 +55,11 @@ def SAMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
     sparsity_queue = list(sparsity_list)
     y = shaped_ob.reshape(-1, 1)
 
-    for t in range(iters + 1):
+    for t in range(iters):
         res = B @ rk
-        _, idx = torch.topk(torch.abs(res), k=L)
+        
+        L1 = min(L, res.numel())
+        _, idx = torch.topk(torch.abs(res), k=L1)
         Gamma_mask[idx] = True
         Ck = Gamma_mask.nonzero(as_tuple=False).squeeze(-1) # (|Ck|,)
         At = A[Ck, :].T
@@ -69,7 +73,8 @@ def SAMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
             
         theta_t = torch.cholesky_solve(At.T @ y, L_chol).reshape(-1)  # (|Ck|,)
         
-        _, maxindex = torch.topk(torch.abs(theta_t).squeeze(), k=L)
+        L2 = min(L, theta_t.numel())
+        _, maxindex = torch.topk(torch.abs(theta_t).squeeze(), k=L2)
         if maxindex.dim() == 0:
             maxindex = maxindex.unsqueeze(0)
         AtL = At[:, maxindex]
@@ -90,7 +95,7 @@ def SAMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
         xk = theta_t[maxindex]
         
         if ctn_new >= ctn:
-            L = L + S
+            L = min(L + S, max_dim)
         elif ctn_new <= err:
             rk = rk_new
             print(f"Converged at iteration {t}, L={L}")
@@ -100,9 +105,10 @@ def SAMP(A, B, rk, shaped_ob, iters, err, sparsity_list, device):
             if sparsity_queue and L >= sparsity_queue[0]:
                 sparsity_queue.pop(0)
                 print(f"Sparsity checkpoint reached: L={L}, error={ctn_new.item():.4f}")
-            if t + 1 < iters:
-                pass
-    
+            if t == iters - 1:
+                print(f"Maximum iterations reached without convergence. "
+                      f"Final L={L}, error={ctn_new.item():.4f}")
+                
     final_error = norm(rk).item()
     print(f'Final sparsity: {len(Gamma_tL)}, Final error: {final_error:.4f}')
     return xk, Gamma_tL, t, L, ctn.item()

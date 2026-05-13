@@ -1,6 +1,11 @@
 import numpy as np
 import torch
+from scipy.fftpack import idct
 from scipy.interpolate import RegularGridInterpolator
+
+def get_1d_idct_matrix(N, device):
+    D = idct(np.eye(N, dtype=np.float32), axis=0, norm='ortho')
+    return torch.tensor(D, dtype=torch.float32, device=device)
 
 def generate_simple_indices_3d(T: int, H: int, W: int, n: int, nt: int):
     """generate the indices of the main spectrum for a video with given dimensions and sampling intervals.
